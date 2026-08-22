@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Admin access is based on the verified Google account email.
+    // This is enforced by Firestore itself, not only by the React UI.
+    function isAdmin() {
+      return request.auth != null &&
+        request.auth.token.email != null &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email == 'shadydawoud577@gmail.com';
+    }
+
+    function isOwner(studentId) {
+      return request.auth != null && request.auth.uid == studentId;
+    }
+
+    // Student profiles contain private information, so students can only
+    // read their own profile. Admins can read all profiles.
+    match /students/{studentId} {
+      allow read: if isAdmin() || isOwner(studentId);
+
+      // A student may create only their own profile. The admin flag must
+      // match the trusted email allow-list, so a normal user cannot promote
+      // themselves to admin during registration.
+      allow create: if isOwner(studentId) &&
+        request.resource.data.isAdmin == isAdmin();
+
+      // Admins may manage student profiles. A normal student may only update
+      // personal fields and can never change their role, payments, email, or
+      // registration timestamp.
+      allow update: if isAdmin() || (
+        isOwner(studentId) &&
+        request.resource.data.isAdmin == resource.data.isAdmin &&
+        request.resource.data.paidMonths == resource.data.paidMonths &&
+        request.resource.data.email == resource.data.email &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name', 'phone', 'region', 'team', 'age', 'memberType', 'photoURL'
+        ])
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // Meetings are visible to authenticated users; only admins can modify them.
+    match /meetings/{meetingId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Students can only read their own attendance records. Admins can read
+    // and write all attendance records.
+    match /attendanceRecords/{recordId} {
+      allow read: if isAdmin() || (
+        request.auth != null && resource.data.studentId == request.auth.uid
+      );
+      allow write: if isAdmin();
+    }
+  }
+}
