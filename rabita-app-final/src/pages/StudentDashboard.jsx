@@ -264,10 +264,11 @@ export default function StudentDashboard() {
       setPostText("");
       setPostImage(null);
 
-  const input = document.getElementById("post-image-input");
-if (input) {
-  input.value = "";
-}
+
+   const input = document.getElementById("post-image-input");
+    if (input) {
+     input.value = "";
+      }
       
     } catch (error) {
       console.error(
