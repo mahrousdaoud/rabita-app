@@ -1,0 +1,6 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="80" fill="#fff"/>
+  <path fill="#9F202B" d="M111 53c-17 28-35 58-47 87-24 58-22 111 9 156 20 29 48 52 78 72-30-37-46-74-46-110 0-44 25-78 58-111 31-31 47-55 47-91 0-24-11-44-24-58-25 14-50 31-75 55zm290 0c17 28 35 58 47 87 24 58 22 111-9 156-20 29-48 52-78 72 30-37 46-74 46-110 0-44-25-78-58-111-31-31-47-55-47-91 0-24 11-44 24-58 25 14 50 31 75 55z"/>
+  <text x="256" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#111">EGYPT SPORTS</text>
+  <text x="256" y="454" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#111">COALITION</text>
+</svg>

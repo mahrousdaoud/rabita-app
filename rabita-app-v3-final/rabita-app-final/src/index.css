@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+body { font-family: 'Tajawal', sans-serif; }
+.section-title { @apply font-display font-bold text-teal-950 text-lg mb-2; }
+.field-label { @apply font-body text-sm font-semibold text-ink block mb-1.5; }
+.field-input { @apply w-full border border-ink/15 rounded-xl px-4 py-2.5 font-body text-ink focus:outline-none focus:ring-2 focus:ring-teal-700/40 focus:border-teal-700; }
+
+@layer components { .card { @apply bg-white rounded-xl2 shadow-sm border border-teal-900/5; } }

@@ -1,0 +1,188 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profileExists() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/students/$(request.auth.uid));
+    }
+
+    function myProfile() {
+      return get(/databases/$(database)/documents/students/$(request.auth.uid)).data;
+    }
+
+    function isSuperAdmin() {
+      return signedIn() &&
+        (
+          request.auth.token.email == 'shadydawoud577@gmail.com' ||
+          (profileExists() && myProfile().isAdmin == true)
+        );
+    }
+
+    function isTeamAdminOf(teamId) {
+      return signedIn() && teamId != null &&
+        exists(/databases/$(database)/documents/teams/$(teamId)) &&
+        (
+          get(/databases/$(database)/documents/teams/$(teamId)).data.adminIds != null && request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.adminIds ||
+          (profileExists() && myProfile().adminTeamIds != null && request.auth.uid in myProfile().adminTeamIds) ||
+          (profileExists() && myProfile().adminTeamId != null && myProfile().adminTeamId == teamId)
+        );
+    }
+
+    function isSchoolAdminOf(schoolId) {
+      return signedIn() && schoolId != null &&
+        exists(/databases/$(database)/documents/schools/$(schoolId)) &&
+        (
+          get(/databases/$(database)/documents/schools/$(schoolId)).data.adminIds != null && request.auth.uid in get(/databases/$(database)/documents/schools/$(schoolId)).data.adminIds ||
+          (profileExists() && myProfile().adminSchoolIds != null && request.auth.uid in myProfile().adminSchoolIds)
+        );
+    }
+
+    function isAnyAdmin() {
+      return isSuperAdmin() ||
+        (profileExists() && (
+          (myProfile().adminTeamIds != null && myProfile().adminTeamIds.size() > 0) ||
+          (myProfile().adminTeamId != null) ||
+          (myProfile().adminSchoolIds != null && myProfile().adminSchoolIds.size() > 0)
+        ));
+    }
+
+    function canSeeStudent(studentData) {
+      return isSuperAdmin() ||
+        (signedIn() && request.auth.uid == studentData.id) ||
+        isTeamAdminOf(studentData.teamId) ||
+        isSchoolAdminOf(studentData.schoolId);
+    }
+
+    match /students/{studentId} {
+      allow read: if signedIn() &&
+        (request.auth.uid == studentId ||
+         isSuperAdmin() ||
+         isTeamAdminOf(resource.data.teamId) ||
+         isSchoolAdminOf(resource.data.schoolId));
+
+      allow create: if signedIn() &&
+        request.auth.uid == studentId &&
+        request.resource.data.isAdmin == (request.auth.token.email == 'shadydawoud577@gmail.com') &&
+        request.resource.data.adminTeamIds.size() == 0 &&
+        request.resource.data.adminSchoolIds.size() == 0;
+
+      allow update: if isSuperAdmin() ||
+        (
+          isTeamAdminOf(resource.data.teamId) &&
+          request.resource.data.teamId == resource.data.teamId &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'name','phone','region','age','gender','contribution','photoURL','paidMonths'
+          ])
+        ) ||
+        (
+          isSchoolAdminOf(resource.data.schoolId) &&
+          request.resource.data.schoolId == resource.data.schoolId &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'name','phone','region','age','gender','contribution','photoURL','paidMonths'
+          ])
+        ) ||
+        (
+          signedIn() && request.auth.uid == studentId &&
+          request.resource.data.isAdmin == resource.data.isAdmin &&
+          request.resource.data.adminTeamIds == resource.data.adminTeamIds &&
+          request.resource.data.adminSchoolIds == resource.data.adminSchoolIds &&
+          request.resource.data.paidMonths == resource.data.paidMonths &&
+          request.resource.data.email == resource.data.email &&
+          request.resource.data.createdAt == resource.data.createdAt &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'name','phone','region','age','gender','contribution','schoolId','schoolName','photoURL'
+          ])
+        );
+
+      allow delete: if isSuperAdmin() ||
+        isTeamAdminOf(resource.data.teamId) ||
+        isSchoolAdminOf(resource.data.schoolId);
+    }
+
+    match /teams/{teamId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /schools/{schoolId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /meetings/{meetingId} {
+      allow read: if signedIn();
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.teamId != null && isTeamAdminOf(request.resource.data.teamId)) ||
+        (request.resource.data.schoolId != null && isSchoolAdminOf(request.resource.data.schoolId));
+
+      allow update, delete: if isSuperAdmin() ||
+        (resource.data.teamId != null && isTeamAdminOf(resource.data.teamId)) ||
+        (resource.data.schoolId != null && isSchoolAdminOf(resource.data.schoolId));
+    }
+
+    match /attendanceRecords/{recordId} {
+      allow read: if signedIn() &&
+        (isSuperAdmin() || request.auth.uid == resource.data.studentId ||
+         isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId));
+
+      allow create, update: if isSuperAdmin() ||
+        isTeamAdminOf(request.resource.data.teamId) ||
+        isSchoolAdminOf(request.resource.data.schoolId);
+    }
+
+    match /availability/{recordId} {
+      allow read: if signedIn() &&
+        (request.auth.uid == resource.data.studentId ||
+         isSuperAdmin() || isTeamAdminOf(resource.data.teamId) ||
+         isSchoolAdminOf(resource.data.schoolId));
+
+      allow create, update: if signedIn() &&
+        (
+          (request.auth.uid == request.resource.data.studentId &&
+           request.resource.data.teamId == myProfile().teamId) ||
+          isSuperAdmin() ||
+          isTeamAdminOf(request.resource.data.teamId) ||
+          isSchoolAdminOf(request.resource.data.schoolId)
+        );
+    }
+
+    // مجموعة عامة لكل فرق خدمة الرياضة بمصر
+    match /teamPosts/{postId} {
+      // كل عضو مسجل دخول يستطيع رؤية منشورات المجموعة
+      allow read: if signedIn();
+
+      // كل عضو مسجل دخول يستطيع نشر تأمل أو صورة
+      allow create: if signedIn() &&
+        request.resource.data.authorId == request.auth.uid;
+
+      // صاحب المنشور يستطيع تعديله/حذفه، والأدمن العام يستطيع ذلك أيضًا
+      allow update, delete: if signedIn() &&
+        (request.auth.uid == resource.data.authorId || isSuperAdmin());
+    }
+
+    match /excuses/{excuseId} {
+      // الاعتذارات خاصة بين الطالب وقائد فريقه/مدرسته بس، مش الأدمن العام
+      allow read: if signedIn() &&
+        (request.auth.uid == resource.data.studentId ||
+         isTeamAdminOf(resource.data.teamId) ||
+         isSchoolAdminOf(resource.data.schoolId));
+
+      allow create: if signedIn() &&
+        request.resource.data.studentId == request.auth.uid &&
+        profileExists() &&
+        request.resource.data.teamId == myProfile().teamId;
+
+      allow update: if
+        (
+          (isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId)) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','adminReply'])
+        );
+    }
+  }
+}
