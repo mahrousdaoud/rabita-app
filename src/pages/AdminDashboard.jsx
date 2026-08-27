@@ -9,13 +9,15 @@ import AdminPayments from "../components/admin/AdminPayments";
 import AdminTeams from "../components/admin/AdminTeams";
 import AdminSchools from "../components/admin/AdminSchools";
 import AdminExcuses from "../components/admin/AdminExcuses";
+import AdminAvailability from "../components/admin/AdminAvailability";
 
 export default function AdminDashboard(){
  const {isSuperAdmin,isTeamAdmin,isSchoolAdmin}=useAuth();
  const TABS=[
   ["dashboard","الداشبورد",<AdminTeamDashboard/>],["students","الطلاب",<AdminStudents/>],
   ["meetings","اللقاءات",<AdminMeetings type="meeting"/>],["events","الأحداث",<AdminMeetings type="event"/>],
-  ["attendance","الحضور والغياب",<AdminAttendance/>],["payments","التعهد",<AdminPayments/>],
+  ["attendance","الحضور والغياب",<AdminAttendance/>],["availability","تأكيد الحضور (فوت)",<AdminAvailability/>],
+  ["payments","التعهد",<AdminPayments/>],
   ...((isTeamAdmin||isSchoolAdmin)?[["excuses","الاعتذارات",<AdminExcuses/>]]:[]),
   ...(isSuperAdmin?[["teams","الفرق",<AdminTeams/>],["schools","المدارس",<AdminSchools/>]]:[])
  ];

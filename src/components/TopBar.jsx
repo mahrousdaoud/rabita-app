@@ -11,6 +11,7 @@ export default function TopBar({ title = "خدمة الرياضة بمصر" }) {
           <div><p className="font-display font-bold text-sm leading-tight">{title}</p><p className="font-body text-[11px] text-teal-100/50">{user?.email}</p></div>
         </div>
         <div className="flex items-center gap-3">
+          <Link to="/about" className="text-xs font-body text-teal-100/80 hover:text-white">من نحن</Link>
           <Link to="/regulations" className="text-xs font-body text-teal-100/80 hover:text-white">اللائحة</Link>
           {isAnyAdmin && <Link to="/admin" className="text-xs font-body bg-gold-500 text-teal-950 font-semibold px-3 py-1.5 rounded-lg">لوحة الأدمن</Link>}
           <button onClick={signOut} className="text-xs font-body text-teal-100/70 hover:text-sand-50">خروج</button>

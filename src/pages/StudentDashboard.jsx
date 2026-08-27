@@ -57,9 +57,13 @@ export default function StudentDashboard() {
 
   const toggleAvailability = async (meetingId) => {
     const current = !!availability[meetingId];
-    await setDoc(doc(db,"availability",`${meetingId}_${user.uid}`), {
-      eventId: meetingId, studentId: user.uid, teamId: profile.teamId, schoolId: profile.schoolId || null, available: !current, updatedAt: Timestamp.now()
-    });
+    try {
+      await setDoc(doc(db,"availability",`${meetingId}_${user.uid}`), {
+        eventId: meetingId, studentId: user.uid, teamId: profile.teamId, schoolId: profile.schoolId || null, available: !current, updatedAt: Timestamp.now()
+      });
+    } catch (err) {
+      alert("حصل خطأ ومقدرناش نأكد حضورك، جرب تاني: " + err.message);
+    }
   };
 
   const publishPost = async (e) => {
@@ -81,17 +85,23 @@ export default function StudentDashboard() {
       setPostText(""); setPostImage(null);
       const fileInput = document.getElementById("post-image-input");
       if (fileInput) fileInput.value = "";
+    } catch (err) {
+      alert("حصل خطأ ومقدرناش ننشر، جرب تاني: " + err.message);
     } finally { setPosting(false); }
   };
 
   const sendExcuse = async () => {
     if (!excuseOpen || !excuseReason.trim()) return;
-    await addDoc(collection(db,"excuses"), {
-      meetingId: excuseOpen.id, meetingTitle: excuseOpen.title, meetingDate: excuseOpen.date,
-      teamId: profile.teamId, schoolId: profile.schoolId || null, studentId: user.uid, studentName: profile.name,
-      reason: excuseReason.trim(), status: "new", createdAt: Timestamp.now()
-    });
-    setExcuseOpen(null); setExcuseReason("");
+    try {
+      await addDoc(collection(db,"excuses"), {
+        meetingId: excuseOpen.id, meetingTitle: excuseOpen.title, meetingDate: excuseOpen.date,
+        teamId: profile.teamId, schoolId: profile.schoolId || null, studentId: user.uid, studentName: profile.name,
+        reason: excuseReason.trim(), status: "new", createdAt: Timestamp.now()
+      });
+      setExcuseOpen(null); setExcuseReason("");
+    } catch (err) {
+      alert("حصل خطأ ومقدرناش نبعت الاعتذار، جرب تاني: " + err.message);
+    }
   };
 
   const presentCount = attendance.filter(a=>a.present).length;
@@ -170,7 +180,7 @@ export default function StudentDashboard() {
         <section className="bg-white rounded-xl2 shadow-sm border border-teal-900/5 p-5">
           <h2 className="font-display font-bold text-teal-950 mb-2">اعتذاراتي</h2>
           <p className="text-xs font-body text-ink/50 mb-4">الاعتذار خاص بك وبقادة فريقك فقط.</p>
-          <div className="space-y-2">{excuses.map(x=><div key={x.id} className="bg-sand-50 rounded-xl p-3 text-sm font-body"><b>{x.meetingTitle}</b> — {x.reason}<span className="block text-xs text-ink/40 mt-1">{x.status==="new"?"في انتظار رد القائد":"تم التعامل معه"}</span></div>)}</div>
+          <div className="space-y-2">{excuses.map(x=><div key={x.id} className="bg-sand-50 rounded-xl p-3 text-sm font-body"><b>{x.meetingTitle}</b> — {x.reason}<span className="block text-xs text-ink/40 mt-1">{x.status==="new"?"في انتظار رد القائد":x.status==="accepted"?"✓ القائد قبل اعتذارك":"القائد رفض الاعتذار، كلم قائد فريقك"}</span></div>)}</div>
         </section>
       </div>
 
@@ -191,7 +201,7 @@ function MeetingList({items,availability,onAvailability,onExcuse,event=false}) {
   return <ul className="space-y-3">{items.map(m=>{
     const available=!!availability[m.id];
     return <li key={m.id} className="border-b border-ink/5 pb-3 last:border-0">
-      <div className="flex justify-between gap-3"><div><p className="font-body font-semibold">{m.title}</p><p className="text-xs text-ink/50 font-body">📍 {m.location||"المكان غير محدد"}</p>{m.notes&&<p className="text-xs text-ink/50 font-body">{m.notes}</p>}</div><span className="text-sm text-teal-800 font-body whitespace-nowrap">{m.date?.toDate?.().toLocaleString("ar-EG")}</span></div>
+      <div className="flex justify-between gap-3"><div><p className="font-body font-semibold">{m.title}</p><p className="text-xs text-ink/50 font-body">📍 {m.location||"المكان غير محدد"}</p>{m.notes&&<p className="text-xs text-ink/50 font-body">{m.notes}</p>}{m.attachmentURL&&<a href={m.attachmentURL} target="_blank" rel="noreferrer" className="text-xs text-teal-800 font-body underline block mt-1">📎 {m.attachmentName||"الملف المرفق"}</a>}</div><span className="text-sm text-teal-800 font-body whitespace-nowrap">{m.date?.toDate?.().toLocaleString("ar-EG")}</span></div>
       <div className="grid grid-cols-2 gap-2 mt-2">
         <button onClick={()=>onAvailability(m.id)} className={`py-2 rounded-lg text-sm font-body font-semibold ${available?"bg-good/10 text-good border border-good":"bg-sand-50 text-ink/60 border border-ink/10"}`}>{available?"✓ فوت — متاح":"فوت — أكّد حضورك المتوقع"}</button>
         <button onClick={()=>onExcuse(m)} className="py-2 rounded-lg text-sm font-body font-semibold border border-bad/20 text-bad bg-bad/5">أعتذر</button>

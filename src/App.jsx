@@ -17,9 +17,6 @@ function Gate() {
   if (!user) return <Login />;
   if (!profile) return <Register />;
 
-  const introSeen = localStorage.getItem("rabita_intro_seen") === "1";
-  if (!introSeen && location.pathname !== "/about") return <Navigate to="/about" replace />;
-
   return (
     <Routes>
       <Route path="/about" element={<Welcome />} />

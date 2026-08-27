@@ -52,16 +52,24 @@ export default function AdminExcuses() {
               <p className="text-sm font-body text-ink/70 mt-2">سبب الاعتذار: {x.reason}</p>
             </div>
             <span className="text-xs font-body text-ink/40 whitespace-nowrap">
-              {x.status === "new" ? "جديد" : "تم التعامل معه"}
+              {x.status === "new" ? "جديد" : x.status === "accepted" ? "مقبول" : "مرفوض"}
             </span>
           </div>
           {x.status === "new" && (
-            <button
-              onClick={() => updateDoc(doc(db, "excuses", x.id), { status: "handled" })}
-              className="mt-3 bg-teal-900 text-sand-50 px-4 py-2 rounded-lg text-xs font-body"
-            >
-              تم التعامل مع الاعتذار
-            </button>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => updateDoc(doc(db, "excuses", x.id), { status: "accepted" })}
+                className="bg-good text-white px-4 py-2 rounded-lg text-xs font-body font-semibold"
+              >
+                قبول الاعتذار
+              </button>
+              <button
+                onClick={() => updateDoc(doc(db, "excuses", x.id), { status: "rejected" })}
+                className="bg-bad text-white px-4 py-2 rounded-lg text-xs font-body font-semibold"
+              >
+                رفض الاعتذار
+              </button>
+            </div>
           )}
         </div>
       ))}

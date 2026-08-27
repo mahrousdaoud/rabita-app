@@ -55,13 +55,11 @@ export default function Register() {
               <option value="">اختر الفريق...</option>
               {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
-          </div>
-          <div>
-            <label className="field-label">المدرسة (اختياري)</label>
-            <select value={form.schoolId} onChange={update("schoolId")} className="field-input">
-              <option value="">مش محدد</option>
-              {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            {teams.length === 0 && (
+              <p className="text-xs text-bad font-body mt-1">
+                لسه مفيش فرق مضافة في النظام. لازم الأدمن يضيف فريق واحد على الأقل الأول من لوحة الأدمن قبل ما تقدر تسجل.
+              </p>
+            )}
           </div>
           <Field label="السن" value={form.age} onChange={update("age")} required type="number" min="4" max="99" />
           <div>
