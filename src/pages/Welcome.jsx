@@ -17,7 +17,7 @@ export default function Welcome() {
     <div className="min-h-screen bg-sand-50 py-8 px-4">
       <div className="max-w-4xl mx-auto space-y-5">
         <section className="bg-teal-950 text-sand-50 rounded-xl2 p-6 md:p-9 text-center">
-          <img src="/rabita-icon.svg" className="w-28 h-28 mx-auto mb-4" alt="شعار خدمة الرياضة بمصر" />
+          <img src="/logo.png" className="w-28 h-28 mx-auto mb-4" alt="شعار خدمة الرياضة بمصر" />
           <p className="font-display text-gold-400 font-bold mb-2">اذهبوا – تلمذوا – علموا</p>
           <p className="font-body text-xs md:text-sm text-teal-100/80 leading-7">اذهبوا وتلمذوا جميع الأمم، وعمدوهم باسم الآب والابن والروح القدس، وعلموهم أن يحفظوا جميع ما أوصيتكم به. وها أنا معكم كل الأيام إلى انقضاء الدهر. آمين. متى 19:28 - 20</p>
           <h1 className="font-display font-extrabold text-2xl md:text-4xl">خدمة الرياضة بمصر</h1>

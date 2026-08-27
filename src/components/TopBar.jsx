@@ -7,7 +7,7 @@ export default function TopBar({ title = "خدمة الرياضة بمصر" }) {
     <div className="bg-teal-950 text-sand-50">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <img src="/rabita-icon.svg" className="w-11 h-11 object-contain" alt="" />
+          <img src="/logo.png" className="w-11 h-11 object-contain" alt="" />
           <div><p className="font-display font-bold text-sm leading-tight">{title}</p><p className="font-body text-[11px] text-teal-100/50">{user?.email}</p></div>
         </div>
         <div className="flex items-center gap-3">

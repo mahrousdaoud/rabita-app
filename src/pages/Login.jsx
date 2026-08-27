@@ -5,7 +5,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-teal-950 flex items-center justify-center px-6">
       <div className="w-full max-w-md text-center">
-        <img src="/rabita-icon.svg" alt="شعار خدمة الرياضة بمصر" className="w-32 h-32 mx-auto mb-5 drop-shadow-lg" />
+        <img src="/logo.png" alt="شعار خدمة الرياضة بمصر" className="w-32 h-32 mx-auto mb-5 drop-shadow-lg" />
         <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-sand-50 leading-snug">
           خدمة الرياضة بمصر
         </h1>

@@ -37,7 +37,7 @@ export default function Register() {
     <div className="min-h-screen bg-sand-50 py-10 px-4">
       <div className="max-w-lg mx-auto">
         <div className="text-center mb-8">
-          <img src="/rabita-icon.svg" alt="الشعار" className="w-20 h-20 mx-auto mb-3" />
+          <img src="/logo.png" alt="الشعار" className="w-20 h-20 mx-auto mb-3" />
           <h1 className="font-display font-bold text-xl text-teal-950">استمارة بيانات خدمة الرياضة بمصر</h1>
           <p className="font-body text-sm text-ink/60 mt-1">مرحبًا بيك {user?.displayName} — كمّل بياناتك عشان نضمك لفريقك</p>
         </div>

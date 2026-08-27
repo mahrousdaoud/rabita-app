@@ -11,11 +11,12 @@ import AdminSchools from "../components/admin/AdminSchools";
 import AdminExcuses from "../components/admin/AdminExcuses";
 
 export default function AdminDashboard(){
- const {isSuperAdmin}=useAuth();
+ const {isSuperAdmin,isTeamAdmin,isSchoolAdmin}=useAuth();
  const TABS=[
   ["dashboard","الداشبورد",<AdminTeamDashboard/>],["students","الطلاب",<AdminStudents/>],
   ["meetings","اللقاءات",<AdminMeetings type="meeting"/>],["events","الأحداث",<AdminMeetings type="event"/>],
-  ["attendance","الحضور والغياب",<AdminAttendance/>],["payments","التعهد",<AdminPayments/>],["excuses","الاعتذارات",<AdminExcuses/>],
+  ["attendance","الحضور والغياب",<AdminAttendance/>],["payments","التعهد",<AdminPayments/>],
+  ...((isTeamAdmin||isSchoolAdmin)?[["excuses","الاعتذارات",<AdminExcuses/>]]:[]),
   ...(isSuperAdmin?[["teams","الفرق",<AdminTeams/>],["schools","المدارس",<AdminSchools/>]]:[])
  ];
  const[tab,setTab]=useState("dashboard");const active=TABS.find(x=>x[0]===tab)?.[2]||TABS[0][2];
