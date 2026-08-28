@@ -1,21 +1,77 @@
 rules_version = '2';
+
 service firebase.storage {
   match /b/{bucket}/o {
-    function signedIn() { return request.auth != null; }
+
+    // =====================================================
+    // SIGNED IN
+    // =====================================================
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // =====================================================
+    // TEAM POSTS / صور الجروب
+    // =====================================================
+
     match /teamPosts/{groupId}/{userId}/{fileName} {
+
+      // كل الأعضاء المسجلين يشوفوا الصور
       allow read: if signedIn();
-      allow write: if signedIn() && request.auth.uid == userId;
+
+      // المستخدم يرفع باسمه فقط
+      allow create: if
+        signedIn() &&
+        request.auth.uid == userId;
+
+      // صاحب الملف يستطيع تحديثه
+      allow update: if
+        signedIn() &&
+        request.auth.uid == userId;
+
+      // صاحب الملف يستطيع حذفه
+      allow delete: if
+        signedIn() &&
+        request.auth.uid == userId;
     }
+
+    // =====================================================
+    // CUSTOM EVENTS / أحداثنا
+    // =====================================================
+
     match /customEvents/{fileName} {
+
       allow read: if signedIn();
-      allow write: if signedIn();
+
+      allow create: if signedIn();
+
+      allow update: if signedIn();
+
       allow delete: if signedIn();
     }
+
+    // =====================================================
+    // MEETING / EVENT ATTACHMENTS
+    // =====================================================
+
     match /meetingAttachments/{type}/{fileName} {
+
       allow read: if signedIn();
-      allow write: if signedIn();
+
+      allow create: if signedIn();
+
+      allow update: if signedIn();
+
       allow delete: if signedIn();
+    }
+
+    // =====================================================
+    // DEFAULT DENY
+    // =====================================================
+
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }
-
