@@ -23,6 +23,11 @@ service cloud.firestore {
     match /teams/{teamId} { allow read: if signedIn(); allow create,update,delete: if isSuperAdmin(); }
     match /schools/{schoolId} { allow read: if signedIn(); allow create,update,delete: if isSuperAdmin(); }
 
+    match /customEvents/{eventId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
     match /meetings/{meetingId} {
       allow read: if signedIn();
       allow create: if isSuperAdmin() || (request.resource.data.teamId != null && isTeamAdminOf(request.resource.data.teamId)) || (request.resource.data.schoolId != null && isSchoolAdminOf(request.resource.data.schoolId));

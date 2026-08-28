@@ -6,6 +6,11 @@ service firebase.storage {
       allow read: if signedIn();
       allow write: if signedIn() && request.auth.uid == userId;
     }
+    match /customEvents/{fileName} {
+      allow read: if signedIn();
+      allow write: if signedIn();
+      allow delete: if signedIn();
+    }
     match /meetingAttachments/{type}/{fileName} {
       allow read: if signedIn();
       allow write: if signedIn();
@@ -13,3 +18,4 @@ service firebase.storage {
     }
   }
 }
+

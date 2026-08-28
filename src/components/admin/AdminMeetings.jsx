@@ -1,17 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { collection, addDoc, deleteDoc, doc, onSnapshot, orderBy, query, Timestamp } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
-
-const DEFAULT_EVENTS = [
-  "مدرسة m power",
-  "مدرسة impact",
-  "مدرسة Scaleright",
-  "مدرسة الأعضاء الجدد",
-  "أولومبيات القادة",
-  "قعدة رجالة"
-];
 
 function uploadFile(file, path, onProgress) {
   return new Promise((resolve, reject) => {
@@ -26,30 +17,9 @@ export default function AdminMeetings({ type = "meeting" }) {
   const { isSuperAdmin, adminTeamIds, adminSchoolIds } = useAuth();
   const [items, setItems] = useState([]), [teams, setTeams] = useState([]), [itemsLoaded, setItemsLoaded] = useState(false);
   const [title, setTitle] = useState(""), [date, setDate] = useState(""), [location, setLocation] = useState(""), [notes, setNotes] = useState(""), [teamId, setTeamId] = useState(""), [file, setFile] = useState(null), [uploading, setUploading] = useState(false), [progress, setProgress] = useState(0);
-  const seeded = useRef(false);
 
   useEffect(() => onSnapshot(query(collection(db, "meetings"), orderBy("date", "desc")), s => { setItems(s.docs.map(d => ({ id: d.id, ...d.data() }))); setItemsLoaded(true); }), []);
   useEffect(() => onSnapshot(query(collection(db, "teams"), orderBy("name", "asc")), s => setTeams(s.docs.map(d => ({ id: d.id, ...d.data() })))), []);
-
-  useEffect(() => {
-    if (type !== "event" || !isSuperAdmin || seeded.current || !itemsLoaded) return;
-    // Wait until the first Firestore snapshot arrives; then create only missing defaults once.
-    seeded.current = true;
-    const existing = new Set(items.filter(x => x.type === "event").map(x => x.title?.trim().toLowerCase()));
-    const missing = DEFAULT_EVENTS.filter(x => !existing.has(x.toLowerCase()));
-    if (!missing.length) return;
-    (async () => {
-      try {
-        for (const eventTitle of missing) {
-          await addDoc(collection(db, "meetings"), {
-            title: eventTitle, notes: "حدث أساسي في منصة الرابطة.", location: "", teamId: null, schoolId: null,
-            teamName: "كل الفرق", type: "event", attachmentURL: "", attachmentName: "",
-            date: Timestamp.fromDate(new Date(Date.now() + 86400000))
-          });
-        }
-      } catch (e) { console.error("default events seed", e); }
-    })();
-  }, [type, isSuperAdmin, itemsLoaded]);
 
   const visible = items.filter(m => m.type === (type === "event" ? "event" : "meeting") && (isSuperAdmin || !m.teamId || adminTeamIds.includes(m.teamId) || adminSchoolIds.includes(m.schoolId)));
 
@@ -85,6 +55,6 @@ export default function AdminMeetings({ type = "meeting" }) {
       <button disabled={uploading} className="w-full bg-teal-900 disabled:opacity-50 text-sand-50 font-body font-semibold py-2.5 rounded-xl">{uploading ? `جاري الرفع... ${progress}%` : "إضافة"}</button>
     </form>
 
-    <div className="card p-5"><h3 className="font-display font-bold text-teal-950 mb-3">{type === "event" ? "أحداثنا" : "كل اللقاءات"}</h3><ul className="space-y-3 max-h-[34rem] overflow-y-auto">{visible.map(m => <li key={m.id} className="border-b pb-3"><div className="flex justify-between gap-3"><div><p className="font-body font-semibold">{m.title}</p><p className="text-xs text-ink/50 font-body">{m.date?.toDate?.().toLocaleString("ar-EG")} · {m.location || "المكان غير محدد"} · {m.teamName || "كل الفرق"}</p>{m.attachmentURL && <a href={m.attachmentURL} target="_blank" rel="noreferrer" download={m.attachmentName || true} className="text-xs text-teal-800 font-body underline">📎 {m.attachmentName || "الملف المرفق"} — تحميل</a>}</div><button onClick={() => confirm("حذف؟") && deleteDoc(doc(db, "meetings", m.id))} className="text-bad text-xs font-body">حذف</button></div></li>)}{!visible.length && <p className="text-sm text-ink/40 font-body">لا يوجد {type === "event" ? "أحداث" : "لقاءات"}.</p>}</ul></div>
+    <div className="card p-5"><h3 className="font-display font-bold text-teal-950 mb-3">{type === "event" ? "كل الأحداث" : "كل اللقاءات"}</h3><ul className="space-y-3 max-h-[34rem] overflow-y-auto">{visible.map(m => <li key={m.id} className="border-b pb-3"><div className="flex justify-between gap-3"><div><p className="font-body font-semibold">{m.title}</p><p className="text-xs text-ink/50 font-body">{m.date?.toDate?.().toLocaleString("ar-EG")} · {m.location || "المكان غير محدد"} · {m.teamName || "كل الفرق"}</p>{m.attachmentURL && <a href={m.attachmentURL} target="_blank" rel="noreferrer" download={m.attachmentName || true} className="text-xs text-teal-800 font-body underline">📎 {m.attachmentName || "الملف المرفق"} — تحميل</a>}</div><button onClick={() => confirm("حذف؟") && deleteDoc(doc(db, "meetings", m.id))} className="text-bad text-xs font-body">حذف</button></div></li>)}{!visible.length && <p className="text-sm text-ink/40 font-body">لا يوجد {type === "event" ? "أحداث" : "لقاءات"}.</p>}</ul></div>
   </div>;
 }

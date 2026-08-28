@@ -6,19 +6,26 @@ import { useAuth } from "../../context/AuthContext";
 export default function AdminAvailability() {
   const { isSuperAdmin, adminTeamIds, adminSchoolIds } = useAuth();
   const [meetings, setMeetings] = useState([]);
+  const [customEvents, setCustomEvents] = useState([]);
   const [meetingId, setMeetingId] = useState("");
   const [students, setStudents] = useState([]);
   const [availList, setAvailList] = useState([]);
 
   useEffect(() => {
-    return onSnapshot(query(collection(db, "meetings")), (snap) => {
+    const un1 = onSnapshot(query(collection(db, "meetings")), (snap) => {
       const list = snap.docs
-        .map((d) => ({ id: d.id, ...d.data() }))
+        .map((d) => ({ id: d.id, ...d.data(), source: "meeting" }))
         .filter((m) => isSuperAdmin || !m.teamId || adminTeamIds.includes(m.teamId) || adminSchoolIds.includes(m.schoolId));
       list.sort((a, b) => (b.date?.toMillis?.() || 0) - (a.date?.toMillis?.() || 0));
       setMeetings(list);
       setMeetingId((prev) => prev || (list.length ? list[0].id : ""));
     });
+    const un2 = onSnapshot(query(collection(db, "customEvents")), (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data(), source: "customEvent" }));
+      list.sort((a, b) => (b.date?.toMillis?.() || 0) - (a.date?.toMillis?.() || 0));
+      setCustomEvents(list);
+    });
+    return () => { un1(); un2(); };
   }, [isSuperAdmin, adminTeamIds.join(",")]);
 
   useEffect(() => {
@@ -39,14 +46,15 @@ export default function AdminAvailability() {
   }, [meetingId, isSuperAdmin, adminTeamIds.join(","), adminSchoolIds.join(",")]);
 
   const availableStudents = students.filter((s) => availList.some((a) => a.studentId === s.id));
-  const selectedMeeting = meetings.find((m) => m.id === meetingId);
+  const allItems = [...meetings, ...customEvents].sort((a, b) => (b.date?.toMillis?.() || 0) - (a.date?.toMillis?.() || 0));
+  const selectedMeeting = allItems.find((m) => m.id === meetingId);
 
   return (
     <div>
       <div className="mb-4">
         <label className="field-label">اختر اللقاء أو الحدث</label>
         <select value={meetingId} onChange={(e) => setMeetingId(e.target.value)} className="field-input max-w-xl">
-          {meetings.map((m) => (
+          {allItems.map((m) => (
             <option key={m.id} value={m.id}>
               {m.title} — {m.date?.toDate?.().toLocaleDateString("ar-EG")}
             </option>
