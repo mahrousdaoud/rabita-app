@@ -67,6 +67,7 @@ export default function AdminMeetings({ type = "meeting" }) {
       <form onSubmit={add} className="card p-5 space-y-3 h-fit">
         <h3 className="font-display font-bold text-teal-950">إضافة {type === "event" ? "حدث" : "لقاء"} جديد</h3>
         <input placeholder={type === "event" ? "اسم الحدث" : "عنوان اللقاء"} value={title} onChange={(e) => setTitle(e.target.value)} className="field-input" />
+        {type === "event" && <select value={title} onChange={(e) => setTitle(e.target.value)} className="field-input"><option value="">اختر حدثًا جاهزًا أو اكتب اسمًا</option><option>مدرسة m power</option><option>مدرسة impact</option><option>مدرسة Scaleright</option><option>مدرسة الأعضاء الجدد</option><option>أولومبيات القادة</option><option>قعدة رجالة</option></select>}
         <input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} className="field-input" />
         <input placeholder="مكان اللقاء / الحدث" value={location} onChange={(e) => setLocation(e.target.value)} className="field-input" />
         {isSuperAdmin ? (

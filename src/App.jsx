@@ -6,9 +6,11 @@ import Welcome from "./pages/Welcome";
 import StudentDashboard from "./pages/StudentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Regulations from "./pages/Regulations";
+import Blocked from "./pages/Blocked";
+import { LanguageProvider } from "./context/LanguageContext";
 
 function Gate() {
-  const { user, profile, loading, isAnyAdmin } = useAuth();
+  const { user, profile, loading, isAnyAdmin, isBlacklisted } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -16,6 +18,7 @@ function Gate() {
   }
   if (!user) return <Login />;
   if (!profile) return <Register />;
+  if (isBlacklisted) return <Blocked />;
 
   return (
     <Routes>
@@ -29,5 +32,5 @@ function Gate() {
 }
 
 export default function App() {
-  return <BrowserRouter><AuthProvider><Gate /></AuthProvider></BrowserRouter>;
+  return <BrowserRouter><LanguageProvider><AuthProvider><Gate /></AuthProvider></LanguageProvider></BrowserRouter>;
 }
