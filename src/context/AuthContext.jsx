@@ -6,88 +6,52 @@ import { auth, googleProvider, db, isAdminEmail } from "../lib/firebase";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [teams, setTeams] = useState([]);
-  const [schools, setSchools] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [excuseAdminIds, setExcuseAdminIds] = useState([]);
+  const [user,setUser]=useState(null),[profile,setProfile]=useState(null),[teams,setTeams]=useState([]),[schools,setSchools]=useState([]),[blacklisted,setBlacklisted]=useState(false),[loading,setLoading]=useState(true),[excuseAdminIds,setExcuseAdminIds]=useState([]);
 
-  useEffect(() => {
-    if (!user) return;
-    const unsubTeams = onSnapshot(collection(db, "teams"), (snap) => setTeams(snap.docs.map((d) => ({ id: d.id, ...d.data() }))));
-    const unsubSchools = onSnapshot(collection(db, "schools"), (snap) => setSchools(snap.docs.map((d) => ({ id: d.id, ...d.data() }))));
-    const unsubSettings = onSnapshot(doc(db, "settings", "global"), (snap) => setExcuseAdminIds(snap.exists() ? (snap.data().excuseAdminIds || []) : []));
-    return () => { unsubTeams(); unsubSchools(); unsubSettings(); };
-  }, [user]);
+  useEffect(()=>{
+    if(!user){ setTeams([]); setSchools([]); setExcuseAdminIds([]); return; }
+    const unsubs=[];
+    unsubs.push(onSnapshot(collection(db,"teams"),s=>setTeams(s.docs.map(d=>({id:d.id,...d.data()}))),()=>setTeams([])));
+    unsubs.push(onSnapshot(collection(db,"schools"),s=>setSchools(s.docs.map(d=>({id:d.id,...d.data()}))),()=>setSchools([])));
+    unsubs.push(onSnapshot(doc(db,"appSettings","general"),s=>setExcuseAdminIds(s.exists() ? (s.data().excuseAdminIds || []) : []),()=>setExcuseAdminIds([])));
+    return ()=>unsubs.forEach(u=>u());
+  },[user?.uid]);
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (fbUser) => {
-      setUser(fbUser);
-      if (!fbUser) { setProfile(null); setLoading(false); return; }
-      try {
-        const snap = await getDoc(doc(db, "students", fbUser.uid));
-        setProfile(snap.exists() ? { id: snap.id, ...snap.data() } : null);
-      } catch (e) {
-        console.error("Profile load failed", e);
-        setProfile(null);
-      } finally { setLoading(false); }
-    });
-    return unsub;
-  }, []);
+  useEffect(()=>{
+    if(!user){setBlacklisted(false);return;}
+    return onSnapshot(doc(db,"blacklist",user.uid),s=>setBlacklisted(s.exists() && s.data().active !== false),()=>setBlacklisted(false));
+  },[user?.uid]);
 
-  const refreshProfile = async () => {
-    if (!user) return;
-    const snap = await getDoc(doc(db, "students", user.uid));
-    setProfile(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+  useEffect(()=>onAuthStateChanged(auth,async fbUser=>{
+    setUser(fbUser); setProfile(null); setBlacklisted(false);
+    if(!fbUser){setLoading(false);return;}
+    try{
+      const [profileSnap,blockedSnap]=await Promise.all([getDoc(doc(db,"students",fbUser.uid)),getDoc(doc(db,"blacklist",fbUser.uid))]);
+      setBlacklisted(blockedSnap.exists() && blockedSnap.data().active !== false);
+      setProfile(profileSnap.exists()?{id:profileSnap.id,...profileSnap.data()}:null);
+    }catch(e){ console.error(e); }
+    setLoading(false);
+  }),[]);
+
+  const refreshProfile=async()=>{if(!user)return;const [snap,blocked]=await Promise.all([getDoc(doc(db,"students",user.uid)),getDoc(doc(db,"blacklist",user.uid))]);setProfile(snap.exists()?{id:snap.id,...snap.data()}:null);setBlacklisted(blocked.exists()&&blocked.data().active!==false);};
+  const signInWithGoogle=async()=>signInWithPopup(auth,googleProvider);
+  const signOut=async()=>firebaseSignOut(auth);
+
+  const completeRegistration=async(formData)=>{
+    if(!user)return;
+    const team=teams.find(t=>t.id===formData.teamId), school=schools.find(s=>s.id===formData.schoolId);
+    const data={name:formData.name,email:user.email,photoURL:user.photoURL||"",phone:formData.phone,region:formData.region,teamId:formData.teamId,teamName:team?.name||"",schoolId:formData.schoolId||null,schoolName:school?.name||"",birthDate:formData.birthDate||"",age:formData.birthDate ? new Date().getFullYear()-new Date(formData.birthDate).getFullYear() : Number(formData.age)||null,gender:formData.gender,contribution:formData.contribution||"",memberType:formData.memberType,isAdmin:isAdminEmail(user.email),adminTeamIds:[],adminSchoolIds:[],paidMonths:[],createdAt:serverTimestamp()};
+    await setDoc(doc(db,"students",user.uid),data);
+    if(formData.birthDate) await setDoc(doc(db,"publicBirthdays",user.uid),{name:formData.name,birthDate:formData.birthDate,month:Number(formData.birthDate.slice(5,7)),day:Number(formData.birthDate.slice(8,10)),active:true,updatedAt:serverTimestamp()},{merge:true});
+    setProfile({id:user.uid,...data});
   };
 
-  const signInWithGoogle = async () => signInWithPopup(auth, googleProvider);
-  const signOut = async () => firebaseSignOut(auth);
-
-  const completeRegistration = async (formData) => {
-    if (!user) return;
-    const team = teams.find((t) => t.id === formData.teamId);
-    const memberTypeLabels = {
-      leader: "قائد",
-      batch1: "مدرسة الدفعة الأولى",
-      batch2: "مدرسة الدفعة الثانية",
-      batch3: "مدرسة الدفعة الثالثة",
-    };
-    const data = {
-      name: formData.name.trim(), email: user.email, photoURL: user.photoURL || "",
-      phone: formData.phone.trim(), region: formData.region.trim(), teamId: formData.teamId,
-      teamName: team?.name || "", schoolId: null, schoolName: "",
-      birthDate: formData.birthDate, birthMonth: Number(formData.birthDate?.split("-")[1] || 0),
-      birthDay: Number(formData.birthDate?.split("-")[2] || 0),
-      age: Number(formData.age || 0), gender: formData.gender,
-      contribution: formData.contribution || "", memberType: formData.memberType,
-      memberTypeLabel: memberTypeLabels[formData.memberType] || formData.memberType,
-      isAdmin: isAdminEmail(user.email), adminTeamIds: [], adminSchoolIds: [], paidMonths: [],
-      isBlacklisted: false, createdAt: serverTimestamp(),
-    };
-    await setDoc(doc(db, "students", user.uid), data);
-    await setDoc(doc(db, "publicMembers", user.uid), {
-      name: data.name, birthDate: data.birthDate, birthMonth: data.birthMonth, birthDay: data.birthDay,
-      photoURL: data.photoURL, updatedAt: serverTimestamp(),
-    }, { merge: true });
-    setProfile({ id: user.uid, ...data });
-  };
-
-  const isSuperAdmin = !!user && (isAdminEmail(user.email) || !!profile?.isAdmin);
-  const adminTeamIds = Array.from(new Set([...(profile?.adminTeamIds || []), ...(profile?.adminTeamId ? [profile.adminTeamId] : [])]));
-  const adminSchoolIds = profile?.adminSchoolIds || [];
-  const isTeamAdmin = adminTeamIds.length > 0;
-  const isSchoolAdmin = adminSchoolIds.length > 0;
-  const isExcuseAdmin = !!user && excuseAdminIds.includes(user.uid);
-  const isAnyAdmin = isSuperAdmin || isTeamAdmin || isSchoolAdmin || isExcuseAdmin;
-
-  return <AuthContext.Provider value={{
-    user, profile, loading, teams, schools,
-    isBlacklisted: !!profile?.isBlacklisted,
-    isSuperAdmin, isTeamAdmin, isSchoolAdmin, isExcuseAdmin, isAnyAdmin,
-    adminTeamIds, adminSchoolIds, adminTeamId: adminTeamIds[0] || null,
-    signInWithGoogle, signOut, completeRegistration, refreshProfile,
-  }}>{children}</AuthContext.Provider>;
+  const isSuperAdmin=!!user&&(isAdminEmail(user.email)||!!profile?.isAdmin);
+  const adminTeamIds=Array.from(new Set([...(profile?.adminTeamIds||[]),...(profile?.adminTeamId?[profile.adminTeamId]:[])]));
+  const adminSchoolIds=profile?.adminSchoolIds||[];
+  const isTeamAdmin=adminTeamIds.length>0,isSchoolAdmin=adminSchoolIds.length>0;
+  const isExcuseAdmin=!!user && (isSuperAdmin || excuseAdminIds.includes(user.uid));
+  const isAnyAdmin=isSuperAdmin||isTeamAdmin||isSchoolAdmin||isExcuseAdmin;
+  return <AuthContext.Provider value={{user,profile,loading,teams,schools,blacklisted,isSuperAdmin,isTeamAdmin,isSchoolAdmin,isExcuseAdmin,isAnyAdmin,adminTeamIds,adminSchoolIds,adminTeamId:adminTeamIds[0]||null,excuseAdminIds,signInWithGoogle,signOut,completeRegistration,refreshProfile}}>{children}</AuthContext.Provider>;
 }
-export const useAuth = () => useContext(AuthContext);
+export const useAuth=()=>useContext(AuthContext);

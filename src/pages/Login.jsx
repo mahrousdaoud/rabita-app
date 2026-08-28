@@ -1,16 +1,19 @@
 import { useAuth } from "../context/AuthContext";
+import LanguageToggle from "../components/LanguageToggle";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Login() {
   const { signInWithGoogle } = useAuth();
+  const { lang } = useLanguage();
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-6">
-      <div className="w-full max-w-md text-center">
-        <img src="/logo.png" alt="شعار خدمة الرياضة بمصر" className="w-32 h-32 mx-auto mb-5 drop-shadow-lg" />
+      <div className="w-full max-w-md text-center relative"><div className="absolute -top-12 right-0"><LanguageToggle /></div>
+        <img src="/logo.png" alt="شعار {lang === "ar" ? "خدمة الرياضة بمصر" : "Sports Ministry Egypt"}" className="w-32 h-32 mx-auto mb-5 drop-shadow-lg" />
         <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-teal-950 leading-snug">
           خدمة الرياضة بمصر
         </h1>
         <p className="font-body text-ink/60 mt-3 mb-10 text-sm">
-          سجّل دخولك بحساب الجيميل عشان تشوف فريقك، اللقاءات والأحداث، الحضور، التعهدات، والمجموعة الخاصة بفريقك.
+          {lang === "ar" ? "سجّل دخولك بحساب الجيميل عشان تشوف فريقك، اللقاءات والأحداث، الحضور، التعهدات، والمجموعة الخاصة بفريقك." : "Sign in with Google to access your team, meetings, events, attendance, contributions and service group."}
         </p>
         <button onClick={signInWithGoogle}
           className="w-full flex items-center justify-center gap-3 bg-teal-900 hover:bg-teal-800 transition text-sand-50 font-body font-semibold py-3.5 rounded-xl2 shadow-lg">
@@ -20,9 +23,9 @@ export default function Login() {
             <path fill="#4CAF50" d="M24 43.6c4.9 0 9.4-1.9 12.7-4.9l-5.9-5c-1.9 1.4-4.4 2.3-6.8 2.3-5.3 0-9.6-3.3-11.3-7.9l-5.9 4.6c3.1 6.2 9.5 10.9 17.2 10.9z"/>
             <path fill="#1976D2" d="M43.6 20.5H42V20.4H24v7.2h11.3c-.8 2.3-2.3 4.3-4.3 5.7l5.9 5c-.4.4 6.7-4.9 6.7-14.4 0-1.2-.1-2.4-.4-3.5z"/>
           </svg>
-          الدخول بحساب جوجل
+          {lang === "ar" ? "الدخول بحساب جوجل" : "Sign in with Google"}
         </button>
-        <p className="text-ink/40 text-xs font-body mt-6">أول ما تدخل هنطلب منك تكمل بياناتك الأساسية مرة واحدة بس</p>
+        <p className="text-ink/40 text-xs font-body mt-6">{lang === "ar" ? "أول ما تدخل هنطلب منك تكمل بياناتك الأساسية مرة واحدة بس" : "After signing in, you will complete your basic information once."}</p>
       </div>
     </div>
   );

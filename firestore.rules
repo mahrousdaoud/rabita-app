@@ -1,56 +1,44 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function profileExists() { return signedIn() && exists(/databases/$(database)/documents/students/$(request.auth.uid)); }
-    function myProfile() { return get(/databases/$(database)/documents/students/$(request.auth.uid)).data; }
-    function isBlacklisted() { return profileExists() && myProfile().isBlacklisted == true; }
-    function isSuperAdmin() { return signedIn() && (request.auth.token.email == 'shadydawoud577@gmail.com' || (profileExists() && myProfile().isAdmin == true)); }
-    function isExcuseAdmin() { return signedIn() && exists(/databases/$(database)/documents/settings/global) && request.auth.uid in get(/databases/$(database)/documents/settings/global).data.excuseAdminIds; }
-    function active() { return signedIn() && !isBlacklisted(); }
-    function isTeamAdminOf(teamId) { return active() && teamId != null && exists(/databases/$(database)/documents/teams/$(teamId)) && ((get(/databases/$(database)/documents/teams/$(teamId)).data.adminIds != null && request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.adminIds) || (profileExists() && myProfile().adminTeamIds != null && request.auth.uid in myProfile().adminTeamIds) || (profileExists() && myProfile().adminTeamId != null && myProfile().adminTeamId == teamId)); }
-    function isSchoolAdminOf(schoolId) { return active() && schoolId != null && exists(/databases/$(database)/documents/schools/$(schoolId)) && ((get(/databases/$(database)/documents/schools/$(schoolId)).data.adminIds != null && request.auth.uid in get(/databases/$(database)/documents/schools/$(schoolId)).data.adminIds) || (profileExists() && myProfile().adminSchoolIds != null && request.auth.uid in myProfile().adminSchoolIds)); }
-    function isAnyAdmin() { return active() && (isSuperAdmin() || isExcuseAdmin() || (profileExists() && ((myProfile().adminTeamIds != null && myProfile().adminTeamIds.size() > 0) || (myProfile().adminTeamId != null) || (myProfile().adminSchoolIds != null && myProfile().adminSchoolIds.size() > 0)))); }
+    function signedIn(){ return request.auth != null; }
+    function profileExists(){ return signedIn() && exists(/databases/$(database)/documents/students/$(request.auth.uid)); }
+    function myProfile(){ return get(/databases/$(database)/documents/students/$(request.auth.uid)).data; }
+    function isSuperAdmin(){ return signedIn() && (request.auth.token.email == 'shadydawoud577@gmail.com' || (profileExists() && myProfile().isAdmin == true)); }
+    function isExcuseAdmin(){ return signedIn() && (isSuperAdmin() || (exists(/databases/$(database)/documents/appSettings/general) && request.auth.uid in get(/databases/$(database)/documents/appSettings/general).data.excuseAdminIds)); }
+    function isTeamAdminOf(teamId){ return signedIn() && teamId != null && exists(/databases/$(database)/documents/teams/$(teamId)) && ((get(/databases/$(database)/documents/teams/$(teamId)).data.adminIds != null && request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.adminIds) || (profileExists() && myProfile().adminTeamIds != null && request.auth.uid in myProfile().adminTeamIds) || (profileExists() && myProfile().adminTeamId != null && myProfile().adminTeamId == teamId)); }
+    function isSchoolAdminOf(schoolId){ return signedIn() && schoolId != null && exists(/databases/$(database)/documents/schools/$(schoolId)) && ((get(/databases/$(database)/documents/schools/$(schoolId)).data.adminIds != null && request.auth.uid in get(/databases/$(database)/documents/schools/$(schoolId)).data.adminIds) || (profileExists() && myProfile().adminSchoolIds != null && request.auth.uid in myProfile().adminSchoolIds)); }
+    function isAnyAdmin(){ return isSuperAdmin() || isExcuseAdmin() || (profileExists() && ((myProfile().adminTeamIds != null && myProfile().adminTeamIds.size() > 0) || myProfile().adminTeamId != null || (myProfile().adminSchoolIds != null && myProfile().adminSchoolIds.size() > 0))); }
 
     match /students/{studentId} {
-      allow read: if signedIn() && (request.auth.uid == studentId || (active() && (isSuperAdmin() || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId))));
-      allow create: if signedIn() && request.auth.uid == studentId && request.resource.data.isAdmin == (request.auth.token.email == 'shadydawoud577@gmail.com');
-      allow update: if isSuperAdmin() || (active() && request.auth.uid == studentId && request.resource.data.isAdmin == resource.data.isAdmin && request.resource.data.adminTeamIds == resource.data.adminTeamIds && request.resource.data.adminSchoolIds == resource.data.adminSchoolIds && request.resource.data.email == resource.data.email && request.resource.data.createdAt == resource.data.createdAt && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','phone','region','age','gender','contribution','photoURL','birthDate','birthMonth','birthDay','schoolId','schoolName','memberType','memberTypeLabel']));
-      allow delete: if isSuperAdmin() || (active() && (isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId)));
+      allow read: if signedIn() && (request.auth.uid == studentId || isSuperAdmin() || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId));
+      allow create: if signedIn() && request.auth.uid == studentId && request.resource.data.isAdmin == (request.auth.token.email == 'shadydawoud577@gmail.com') && request.resource.data.adminTeamIds.size() == 0 && request.resource.data.adminSchoolIds.size() == 0;
+      allow update: if isSuperAdmin() || (isTeamAdminOf(resource.data.teamId) && request.resource.data.teamId == resource.data.teamId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','phone','region','age','gender','contribution','photoURL','paidMonths','birthDate'])) || (isSchoolAdminOf(resource.data.schoolId) && request.resource.data.schoolId == resource.data.schoolId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','phone','region','age','gender','contribution','photoURL','paidMonths','birthDate'])) || (signedIn() && request.auth.uid == studentId && request.resource.data.isAdmin == resource.data.isAdmin && request.resource.data.adminTeamIds == resource.data.adminTeamIds && request.resource.data.adminSchoolIds == resource.data.adminSchoolIds && request.resource.data.paidMonths == resource.data.paidMonths && request.resource.data.email == resource.data.email && request.resource.data.createdAt == resource.data.createdAt && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','phone','region','age','gender','contribution','schoolId','schoolName','photoURL','birthDate']));
+      allow delete: if isSuperAdmin() || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId);
     }
-    match /publicMembers/{id} {
-      allow read: if active();
-      allow create, update: if active() && (request.auth.uid == id || isSuperAdmin());
-      allow delete: if isSuperAdmin();
-    }
-    match /settings/{id} {
-      allow read: if active();
-      allow create, update, delete: if isSuperAdmin();
-    }
-    match /teams/{teamId} { allow read: if active(); allow create, update, delete: if isSuperAdmin(); }
-    match /schools/{schoolId} { allow read: if active(); allow create, update, delete: if isSuperAdmin(); }
+
+    match /publicBirthdays/{uid} { allow read: if signedIn(); allow create, update: if signedIn() && (request.auth.uid == uid || isSuperAdmin()); allow delete: if isSuperAdmin() || request.auth.uid == uid; }
+    match /blacklist/{uid} { allow read: if isSuperAdmin() || (signedIn() && request.auth.uid == uid); allow create, update, delete: if isSuperAdmin(); }
+    match /appSettings/{docId} { allow read: if signedIn(); allow create, update: if isSuperAdmin(); }
+
+    match /teams/{teamId} { allow read: if signedIn(); allow create,update,delete: if isSuperAdmin(); }
+    match /schools/{schoolId} { allow read: if signedIn(); allow create,update,delete: if isSuperAdmin(); }
     match /meetings/{meetingId} {
-      allow read: if active();
+      allow read: if signedIn();
       allow create: if isSuperAdmin() || (request.resource.data.teamId != null && isTeamAdminOf(request.resource.data.teamId)) || (request.resource.data.schoolId != null && isSchoolAdminOf(request.resource.data.schoolId));
-      allow update, delete: if isSuperAdmin() || (resource.data.teamId != null && isTeamAdminOf(resource.data.teamId)) || (resource.data.schoolId != null && isSchoolAdminOf(resource.data.schoolId));
+      allow update,delete: if isSuperAdmin() || (resource.data.teamId != null && isTeamAdminOf(resource.data.teamId)) || (resource.data.schoolId != null && isSchoolAdminOf(resource.data.schoolId));
     }
-    match /attendanceRecords/{recordId} {
-      allow read: if active() && (isSuperAdmin() || request.auth.uid == resource.data.studentId || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId));
-      allow create, update: if isSuperAdmin() || isTeamAdminOf(request.resource.data.teamId) || isSchoolAdminOf(request.resource.data.schoolId);
-    }
+    match /attendanceRecords/{recordId} { allow read: if signedIn() && (isSuperAdmin() || request.auth.uid == resource.data.studentId || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId)); allow create,update: if isSuperAdmin() || isTeamAdminOf(request.resource.data.teamId) || isSchoolAdminOf(request.resource.data.schoolId); }
     match /availability/{recordId} {
-      allow read: if active() && (request.auth.uid == resource.data.studentId || isSuperAdmin() || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId));
-      allow create, update: if active() && ((request.auth.uid == request.resource.data.studentId && request.resource.data.teamId == myProfile().teamId) || isSuperAdmin() || isTeamAdminOf(request.resource.data.teamId) || isSchoolAdminOf(request.resource.data.schoolId));
+      allow read: if signedIn() && (request.auth.uid == resource.data.studentId || isSuperAdmin() || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId));
+      allow create,update: if signedIn() && ((request.auth.uid == request.resource.data.studentId && profileExists() && request.resource.data.teamId == myProfile().teamId) || isSuperAdmin() || isTeamAdminOf(request.resource.data.teamId) || isSchoolAdminOf(request.resource.data.schoolId));
     }
-    match /teamPosts/{postId} {
-      allow read: if active();
-      allow create: if active() && request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if active() && (request.auth.uid == resource.data.authorId || isSuperAdmin());
-    }
+    match /teamPosts/{postId} { allow read: if signedIn(); allow create: if signedIn() && request.resource.data.authorId == request.auth.uid; allow update,delete: if signedIn() && (request.auth.uid == resource.data.authorId || isSuperAdmin()); }
+    match /teamPostComments/{commentId} { allow read: if signedIn(); allow create: if signedIn() && request.resource.data.authorId == request.auth.uid; allow update,delete: if signedIn() && (request.auth.uid == resource.data.authorId || isSuperAdmin()); }
     match /excuses/{excuseId} {
-      allow read: if active() && (request.auth.uid == resource.data.studentId || isSuperAdmin() || isExcuseAdmin() || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId));
-      allow create: if active() && request.resource.data.studentId == request.auth.uid && profileExists() && request.resource.data.teamId == myProfile().teamId;
-      allow update: if active() && ((isExcuseAdmin() || isSuperAdmin() || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId)) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','adminReply']));
+      allow read: if signedIn() && (isExcuseAdmin() || request.auth.uid == resource.data.studentId || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId));
+      allow create: if signedIn() && request.resource.data.studentId == request.auth.uid && profileExists() && request.resource.data.teamId == myProfile().teamId;
+      allow update: if isExcuseAdmin() || ((isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId)) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','adminReply']));
     }
   }
 }

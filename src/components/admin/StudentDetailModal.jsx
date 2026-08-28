@@ -20,7 +20,7 @@ export default function StudentDetailModal({ student, onClose }) {
     ["الاسم", student.name], ["الإيميل", student.email], ["الموبايل", student.phone],
     ["المنطقة", student.region], ["الفريق", student.teamName], ["السن", student.age],
     ["النوع", student.gender === "male" ? "ولد" : "بنت"],
-    ["نوع المدرسة", ({leader:"قائد",batch1:"مدرسة الدفعة الأولى",batch2:"مدرسة الدفعة الثانية",batch3:"مدرسة الدفعة الثالثة"}[student.memberType] || student.memberType)],
+    ["نوع المدرسة", student.memberType === "new" ? "مدرسة جديدة" : "مدرسة قديمة"],
     ["هيقدم إيه للفريق", student.contribution || "—"],
     ["التعهد المدفوع", (student.paidMonths || []).length + " شهر"],
     ["أدمن فريق", (student.adminTeamIds || []).length ? "أيوه" : "لأ"],

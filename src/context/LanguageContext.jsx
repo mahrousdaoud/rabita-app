@@ -1,27 +1,19 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-const LanguageContext = createContext(null);
-const dict = {
+const translations = {
   ar: {
-    about: "من نحن", regulations: "اللائحة", admin: "لوحة الأدمن", logout: "خروج",
-    dashboard: "الرئيسية", meetings: "اللقاءات", events: "أحداثنا", group: "مجموعة الخدمة",
-    birthday: "أعياد الميلاد", tomorrowBirthday: "بكرا عيد ميلاد", noBirthdays: "مفيش أعياد ميلاد بكرا",
-    blockedTitle: "تم حجب حسابك", blockedText: "حسابك موجود في القائمة السوداء، لذلك لا يمكنك الوصول إلى محتوى المنصة.",
-    close: "إغلاق", language: "English", welcome: "خدمة الرياضة بمصر",
+    about:"من نحن", rules:"اللائحة", admin:"لوحة الأدمن", logout:"خروج", language:"English", dashboard:"الداشبورد", students:"الطلاب", meetings:"اللقاءات", events:"الأحداث", attendance:"الحضور والغياب", availability:"تأكيد الحضور", payments:"التعهد", excuses:"الاعتذارات", teams:"الفرق", schools:"المدارس", blacklist:"البلاك ليست", settings:"الإعدادات", group:"جروب الخدمة", birthdays:"أعياد الميلاد", save:"حفظ", send:"إرسال", cancel:"إلغاء", loading:"جاري التحميل...", blockedTitle:"تم حجب حسابك", blockedText:"حسابك موجود في البلاك ليست حاليًا، لذلك لا يمكنك رؤية أو استخدام محتوى المنصة.", contactAdmin:"تواصل مع مسؤول المنصة إذا كنت تعتقد أن هذا تم بالخطأ.", tomorrowBirthday:"عيد ميلاد غدًا", noBirthdays:"لا توجد أعياد ميلاد غدًا.", present:"✓ فوت — متاح", confirmPresent:"فوت — أكّد حضورك المتوقع", excuse:"أعتذر", excusesMine:"اعتذاراتي", writeMessage:"اكتب رسالة أو كلمة تشجيع...", publish:"إرسال", image:"صورة", name:"الاسم", birthDate:"تاريخ الميلاد", memberType:"نوع العضوية", leader:"قائد", school1:"مدرسة الدفعة الأولى", school2:"مدرسة الدفعة الثانية", school3:"مدرسة الدفعة الثالثة", team:"الفريق", chooseTeam:"اختر الفريق...", fullName:"الاسم بالكامل", phone:"رقم الموبايل", region:"المنطقة", gender:"النوع", male:"ولد", female:"بنت", contribution:"إيه اللي هتقدمه للفريق؟", register:"تسجيل واستكمال الدخول", newEvent:"إضافة حدث جديد", newMeeting:"إضافة لقاء جديد", allEvents:"كل الأحداث", allMeetings:"كل اللقاءات", delete:"حذف", add:"إضافة", reason:"سبب الاعتذار", noItems:"مفيش عناصر مجدولة دلوقتي" 
   },
   en: {
-    about: "About us", regulations: "Regulations", admin: "Admin panel", logout: "Log out",
-    dashboard: "Home", meetings: "Meetings", events: "Our Events", group: "Service Group",
-    birthday: "Birthdays", tomorrowBirthday: "Tomorrow is", noBirthdays: "No birthdays tomorrow",
-    blockedTitle: "Account blocked", blockedText: "Your account is on the blacklist, so access to the platform is blocked.",
-    close: "Close", language: "العربية", welcome: "Sports Ministry Egypt",
+    about:"About", rules:"Regulations", admin:"Admin Panel", logout:"Logout", language:"العربية", dashboard:"Dashboard", students:"Students", meetings:"Meetings", events:"Events", attendance:"Attendance", availability:"Attendance confirmation", payments:"Contributions", excuses:"Excuses", teams:"Teams", schools:"Schools", blacklist:"Blacklist", settings:"Settings", group:"Service Group", birthdays:"Birthdays", save:"Save", send:"Send", cancel:"Cancel", loading:"Loading...", blockedTitle:"Your account is blocked", blockedText:"Your account is currently on the blacklist, so you cannot view or use platform content.", contactAdmin:"Contact the platform administrator if you believe this is a mistake.", tomorrowBirthday:"Birthday tomorrow", noBirthdays:"No birthdays tomorrow.", present:"✓ Confirmed", confirmPresent:"Confirm attendance", excuse:"Excuse", excusesMine:"My excuses", writeMessage:"Write a message or encouragement...", publish:"Send", image:"Image", name:"Name", birthDate:"Date of birth", memberType:"Membership type", leader:"Leader", school1:"First Cohort School", school2:"Second Cohort School", school3:"Third Cohort School", team:"Team", chooseTeam:"Choose a team...", fullName:"Full name", phone:"Phone", region:"Region", gender:"Gender", male:"Male", female:"Female", contribution:"What will you contribute to the team?", register:"Register and continue", newEvent:"Add new event", newMeeting:"Add new meeting", allEvents:"All events", allMeetings:"All meetings", delete:"Delete", add:"Add", reason:"Excuse reason", noItems:"No scheduled items right now"
   }
 };
 
-export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState(() => localStorage.getItem("rabita_lang") || "ar");
-  useEffect(() => { localStorage.setItem("rabita_lang", lang); document.documentElement.lang = lang; document.documentElement.dir = lang === "ar" ? "rtl" : "ltr"; }, [lang]);
-  const t = (key) => dict[lang]?.[key] ?? dict.ar[key] ?? key;
-  return <LanguageContext.Provider value={{ lang, setLang, t }}>{children}</LanguageContext.Provider>;
+const LanguageContext = createContext(null);
+export function LanguageProvider({children}) {
+  const [lang,setLang] = useState(() => localStorage.getItem("rabita_lang") || "ar");
+  useEffect(()=>{ localStorage.setItem("rabita_lang",lang); document.documentElement.lang=lang; document.documentElement.dir=lang === "ar" ? "rtl" : "ltr"; },[lang]);
+  const value = useMemo(()=>({lang, setLang:(next)=>setLang(next), toggleLanguage:()=>setLang(x=>x === "ar" ? "en" : "ar"), t:(key)=>translations[lang]?.[key] ?? translations.ar[key] ?? key}),[lang]);
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
-export const useLanguage = () => useContext(LanguageContext);
+export const useLanguage=()=>useContext(LanguageContext);

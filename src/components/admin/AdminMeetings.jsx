@@ -15,6 +15,7 @@ export default function AdminMeetings({ type = "meeting" }) {
   const [teamId, setTeamId] = useState("");
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const DEFAULT_EVENTS = ["مدرسة m power","مدرسة impact","مدرسة Scaleright","مدرسة الأعضاء الجدد","أولومبيات القادة","قعدة رجالة"];
 
   useEffect(() => onSnapshot(query(collection(db, "meetings"), orderBy("date", "desc")),
     (s) => setItems(s.docs.map((d) => ({ id: d.id, ...d.data() })))), []);
@@ -25,6 +26,17 @@ export default function AdminMeetings({ type = "meeting" }) {
     m.type === (type === "event" ? "event" : "meeting") &&
     (isSuperAdmin || !m.teamId || adminTeamIds.includes(m.teamId) || adminSchoolIds.includes(m.schoolId))
   );
+
+  const addDefaultEvents = async () => {
+    if (type !== "event" || !isSuperAdmin) return;
+    setUploading(true);
+    try {
+      const existing = new Set(items.filter(x=>x.type === "event").map(x=>x.title.trim().toLowerCase()));
+      const batch = DEFAULT_EVENTS.filter(x=>!existing.has(x.toLowerCase()));
+      for (const title of batch) await addDoc(collection(db,"meetings"), {title, notes:"حدث أساسي في منصة الرابطة — حدّد الموعد من لوحة الأدمن.", location:"", teamId:null, schoolId:null, teamName:"كل الفرق", type:"event", attachmentURL:"", attachmentName:"", date:Timestamp.fromDate(new Date(Date.now()+86400000))});
+      alert(`تمت إضافة ${batch.length} أحداث أساسية`);
+    } catch(err){ alert("حصل خطأ أثناء إضافة الأحداث: "+err.message); } finally { setUploading(false); }
+  };
 
   const add = async (e) => {
     e.preventDefault();
@@ -67,7 +79,6 @@ export default function AdminMeetings({ type = "meeting" }) {
       <form onSubmit={add} className="card p-5 space-y-3 h-fit">
         <h3 className="font-display font-bold text-teal-950">إضافة {type === "event" ? "حدث" : "لقاء"} جديد</h3>
         <input placeholder={type === "event" ? "اسم الحدث" : "عنوان اللقاء"} value={title} onChange={(e) => setTitle(e.target.value)} className="field-input" />
-        {type === "event" && <select value={title} onChange={(e) => setTitle(e.target.value)} className="field-input"><option value="">اختر حدثًا جاهزًا أو اكتب اسمًا</option><option>مدرسة m power</option><option>مدرسة impact</option><option>مدرسة Scaleright</option><option>مدرسة الأعضاء الجدد</option><option>أولومبيات القادة</option><option>قعدة رجالة</option></select>}
         <input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} className="field-input" />
         <input placeholder="مكان اللقاء / الحدث" value={location} onChange={(e) => setLocation(e.target.value)} className="field-input" />
         {isSuperAdmin ? (
@@ -87,6 +98,7 @@ export default function AdminMeetings({ type = "meeting" }) {
           {uploading ? "جاري الإضافة..." : "إضافة"}
         </button>
       </form>
+      {type === "event" && isSuperAdmin && <button type="button" onClick={addDefaultEvents} disabled={uploading} className="card p-4 text-right font-body font-semibold text-teal-900 hover:bg-sand-50">⚡ إضافة الأحداث الأساسية الستة تلقائيًا</button>}
 
       <div className="card p-5">
         <h3 className="font-display font-bold text-teal-950 mb-3">كل {type === "event" ? "الأحداث" : "اللقاءات"}</h3>

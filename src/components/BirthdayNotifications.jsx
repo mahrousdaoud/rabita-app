@@ -1,24 +1,3 @@
-import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "../lib/firebase";
-import { useLanguage } from "../context/LanguageContext";
-
-function tomorrowMonthDay() {
-  const d = new Date(); d.setDate(d.getDate() + 1);
-  return { month: d.getMonth() + 1, day: d.getDate() };
-}
-
-export default function BirthdayNotifications() {
-  const { lang, t } = useLanguage();
-  const [birthdays, setBirthdays] = useState([]);
-  useEffect(() => {
-    const { month, day } = tomorrowMonthDay();
-    const unsub = onSnapshot(query(collection(db, "publicMembers"), where("birthMonth", "==", month), where("birthDay", "==", day)), snap => setBirthdays(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    return unsub;
-  }, []);
-  if (!birthdays.length) return null;
-  return <div className="bg-gold-500/15 border border-gold-500/40 rounded-xl2 p-4">
-    <p className="font-display font-bold text-teal-950">🎂 {t("birthday")}</p>
-    <div className="mt-2 space-y-1">{birthdays.map(b => <p key={b.id} className="font-body text-sm">{lang === "ar" ? `بكرا عيد ميلاد ${b.name} 🎉` : `Tomorrow is ${b.name}'s birthday 🎉`}</p>)}</div>
-  </div>;
-}
+import { useEffect,useState } from "react"; import { collection,onSnapshot } from "firebase/firestore"; import { db } from "../lib/firebase"; import { useLanguage } from "../context/LanguageContext";
+function tomorrow(){const d=new Date();d.setDate(d.getDate()+1);return {month:d.getMonth()+1,day:d.getDate()};}
+export default function BirthdayNotifications({compact=false}){const {t,lang}=useLanguage();const [people,setPeople]=useState([]);useEffect(()=>onSnapshot(collection(db,"publicBirthdays"),s=>setPeople(s.docs.map(d=>d.data())),()=>setPeople([])),[]);const d=tomorrow();const matches=people.filter(p=>p.active!==false&&Number(p.month)===d.month&&Number(p.day)===d.day);if(compact)return <div title={matches.length?`${t("tomorrowBirthday")}: ${matches.map(x=>x.name).join(", ")}`:t("noBirthdays")} className="relative text-sm px-2 py-1 rounded-lg bg-white/10">🎂{matches.length>0&&<span className="absolute -top-1 -right-1 min-w-4 h-4 rounded-full bg-gold-500 text-teal-950 text-[9px] font-bold flex items-center justify-center">{matches.length}</span>}</div>;return <section className="card p-5"><h2 className="font-display font-bold text-teal-950 mb-3">🎂 {t("birthdays")}</h2>{matches.length?<div className="space-y-2">{matches.map((p,i)=><div key={i} className="bg-gold-500/10 rounded-xl p-3 font-body text-sm">{lang==='ar'?`بكرا عيد ميلاد ${p.name} 🎉`: `Tomorrow is ${p.name}'s birthday 🎉`}</div>)}</div>:<p className="text-sm text-ink/40 font-body">{t("noBirthdays")}</p>}</section>}
