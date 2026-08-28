@@ -8,9 +8,9 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-6">
       <div className="w-full max-w-md text-center relative"><div className="absolute -top-12 right-0"><LanguageToggle /></div>
-        <img src="/logo.png" alt={lang === "ar" ? "خدمة الرياضة بمصر" : "Sports Ministry Egypt"} className="w-32 h-32 mx-auto mb-5 drop-shadow-lg" />
+        <img src="/logo.png" alt={lang === "ar" ? "EGYPT SPORTS COALITION" : "EGYPT SPORTS COALITION"} className="w-32 h-32 mx-auto mb-5 drop-shadow-lg" />
         <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-teal-950 leading-snug">
-          خدمة الرياضة بمصر
+          EGYPT SPORTS COALITION
         </h1>
         <p className="font-body text-ink/60 mt-3 mb-10 text-sm">
           {lang === "ar" ? "سجّل دخولك بحساب الجيميل عشان تشوف فريقك، اللقاءات والأحداث، الحضور، التعهدات، والمجموعة الخاصة بفريقك." : "Sign in with Google to access your team, meetings, events, attendance, contributions and service group."}

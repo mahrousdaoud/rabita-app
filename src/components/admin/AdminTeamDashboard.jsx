@@ -12,7 +12,7 @@ export default function AdminTeamDashboard(){
   if(adminTeamIds[0]) return onSnapshot(query(collection(db,"students"),where("teamId","==",adminTeamIds[0])),done);
   if(adminSchoolIds[0]) return onSnapshot(query(collection(db,"students"),where("schoolId","==",adminSchoolIds[0])),done);
  },[isSuperAdmin,adminTeamIds.join(","),adminSchoolIds.join(",")]);
- useEffect(()=>onSnapshot(query(collection(db,"meetings"),orderBy("date","asc")),s=>setMeetings(s.docs.map(d=>({id:d.id,...d.data()})).filter(m=>new Date(m.date?.toDate?.()||m.date)>=new Date()&&(isSuperAdmin||!m.teamId||adminTeamIds.includes(m.teamId)||adminSchoolIds.includes(m.schoolId))))),[isSuperAdmin,adminTeamIds.join(",")]);
+ useEffect(()=>onSnapshot(query(collection(db,"meetings"),orderBy("date","asc")),s=>setMeetings(s.docs.map(d=>({id:d.id,...d.data()})).filter(m=>new Date(m.date?.toDate?.()||m.date)>=new Date()&&(isSuperAdmin||!m.teamId||adminTeamIds.includes(m.teamId)||adminSchoolIds.includes(m.schoolId))))),[isSuperAdmin,adminTeamIds.join(","),adminSchoolIds.join(",")]);
  useEffect(()=>{
   const done=s=>setAvailability(s.docs.map(d=>d.data()));
   if(isSuperAdmin) return onSnapshot(collection(db,"availability"),done);

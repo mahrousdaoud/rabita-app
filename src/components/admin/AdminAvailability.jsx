@@ -32,12 +32,11 @@ export default function AdminAvailability() {
 
   useEffect(() => {
     if (!meetingId) return;
-    return onSnapshot(collection(db, "availability"), (snap) => {
-      setAvailList(
-        snap.docs.map((d) => d.data()).filter((a) => a.eventId === meetingId && a.available)
-      );
-    });
-  }, [meetingId]);
+    const done = (snap) => setAvailList(snap.docs.map((d) => d.data()).filter((a) => a.eventId === meetingId && a.available));
+    if (isSuperAdmin) return onSnapshot(collection(db, "availability"), done);
+    if (adminTeamIds[0]) return onSnapshot(query(collection(db, "availability"), where("teamId", "==", adminTeamIds[0])), done);
+    if (adminSchoolIds[0]) return onSnapshot(query(collection(db, "availability"), where("schoolId", "==", adminSchoolIds[0])), done);
+  }, [meetingId, isSuperAdmin, adminTeamIds.join(","), adminSchoolIds.join(",")]);
 
   const availableStudents = students.filter((s) => availList.some((a) => a.studentId === s.id));
   const selectedMeeting = meetings.find((m) => m.id === meetingId);
