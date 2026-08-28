@@ -12,7 +12,7 @@ export default function AdminExcuses(){
     if(isExcuseAdmin) unsubs.push(onSnapshot(collection(db,"excuses"),s=>{s.docs.forEach(d=>combined[d.id]={id:d.id,...d.data()});flush()}));
     else {
       adminTeamIds.forEach(id=>unsubs.push(onSnapshot(query(collection(db,"excuses"),where("teamId","==",id)),s=>{s.docs.forEach(d=>combined[d.id]={id:d.id,...d.data()});flush()})));
-      adminSchoolIds.forEach(id=>unsubs.push(onSnapshot(query(collection(db,"excuses"),where("schoolId","==",id)),s=>{s.docs.forEach(d=>combined[d.id]={id:d.id,...d.data()});flush()}));
+      adminSchoolIds.forEach(id=>unsubs.push(onSnapshot(query(collection(db,"excuses"),where("schoolId","==",id)),s=>{s.docs.forEach(d=>combined[d.id]={id:d.id,...d.data()});flush()})));
     }
     return()=>unsubs.forEach(u=>u());
   },[isExcuseAdmin,adminTeamIds.join(","),adminSchoolIds.join(",")]);
