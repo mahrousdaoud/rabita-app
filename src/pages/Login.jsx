@@ -8,7 +8,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-6">
       <div className="w-full max-w-md text-center relative"><div className="absolute -top-12 right-0"><LanguageToggle /></div>
-        <img src="/logo.png" alt="شعار {lang === "ar" ? "خدمة الرياضة بمصر" : "Sports Ministry Egypt"}" className="w-32 h-32 mx-auto mb-5 drop-shadow-lg" />
+        <img src="/logo.png" alt={lang === "ar" ? "خدمة الرياضة بمصر" : "Sports Ministry Egypt"} className="w-32 h-32 mx-auto mb-5 drop-shadow-lg" />
         <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-teal-950 leading-snug">
           خدمة الرياضة بمصر
         </h1>
