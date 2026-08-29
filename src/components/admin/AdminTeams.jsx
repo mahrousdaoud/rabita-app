@@ -21,6 +21,7 @@ export default function AdminTeams() {
     await updateDoc(doc(db,"students",studentId),{adminTeamIds:[...old],adminTeamId:[...old][0]||null});
   };
   const saveCash=async(t,value)=>updateDoc(doc(db,"teams",t.id),{cashNumber:value.trim()});
+  const togglePaymentAdmin=async(t,studentId)=>{const ids=new Set(t.paymentAdminIds||[]);ids.has(studentId)?ids.delete(studentId):ids.add(studentId);await updateDoc(doc(db,"teams",t.id),{paymentAdminIds:[...ids]});};
   return <div className="grid md:grid-cols-2 gap-6">
     <form onSubmit={addTeam} className="card p-5 space-y-3 h-fit">
       <h3 className="font-display font-bold text-teal-950">إضافة فريق جديد</h3>
@@ -36,7 +37,7 @@ export default function AdminTeams() {
           <div className="flex justify-between"><div><p className="font-body font-semibold">{t.name}</p><p className="text-xs text-ink/50">{members.length} عضو · {admins.length} أدمن</p></div><button onClick={()=>removeTeam(t.id)} className="text-bad text-xs font-body">حذف</button></div>
           <label className="field-label mt-3">رقم كاش الفريق (اختياري)</label>
           <input defaultValue={t.cashNumber||""} onBlur={e=>saveCash(t,e.target.value)} placeholder={t.name==="ديرمواس"?DAIRMWAS_CASH:"رقم الكاش"} className="field-input mb-3"/>
-          <p className="text-xs font-body text-ink/50 mb-2">اختار أي عدد من قادة الفريق:</p>
+          <p className="text-xs font-body text-ink/50 mb-2">اختار قادة الفريق (صلاحيات إدارة الفريق):</p>
           <div className="grid sm:grid-cols-2 gap-2">{members.map(s=><label key={s.id} className="flex items-center gap-2 border rounded-lg px-3 py-2 font-body text-sm">
             <input type="checkbox" checked={admins.includes(s.id)} onChange={()=>toggleAdmin(t,s.id)}/><span>{s.name}</span>
           </label>)}</div>

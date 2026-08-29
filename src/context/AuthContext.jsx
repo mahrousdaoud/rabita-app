@@ -50,8 +50,11 @@ export function AuthProvider({ children }) {
   const adminTeamIds=Array.from(new Set([...(profile?.adminTeamIds||[]),...(profile?.adminTeamId?[profile.adminTeamId]:[])]));
   const adminSchoolIds=profile?.adminSchoolIds||[];
   const isTeamAdmin=adminTeamIds.length>0,isSchoolAdmin=adminSchoolIds.length>0;
-  const isExcuseAdmin=!!user && (isSuperAdmin || excuseAdminIds.includes(user.uid));
-  const isAnyAdmin=isSuperAdmin||isTeamAdmin||isSchoolAdmin||isExcuseAdmin;
-  return <AuthContext.Provider value={{user,profile,loading,teams,schools,blacklisted,isSuperAdmin,isTeamAdmin,isSchoolAdmin,isExcuseAdmin,isAnyAdmin,adminTeamIds,adminSchoolIds,adminTeamId:adminTeamIds[0]||null,excuseAdminIds,signInWithGoogle,signOut,completeRegistration,refreshProfile}}>{children}</AuthContext.Provider>;
+  const paymentAdminTeamIds=teams.filter(t=>(t.paymentAdminIds||[]).includes(user?.uid)).map(t=>t.id);
+  const isPaymentAdmin=!!user && (isSuperAdmin || paymentAdminTeamIds.length>0);
+  const isExcuseAdmin=!!user && (isSuperAdmin || excuseAdminIds.includes(user.uid) || teams.some(t => (t.excuseAdminIds||[]).includes(user.uid)));
+  const excuseAdminTeamIds=teams.filter(t=>(t.excuseAdminIds||[]).includes(user?.uid)).map(t=>t.id);
+  const isAnyAdmin=isSuperAdmin||isTeamAdmin||isSchoolAdmin||isExcuseAdmin||isPaymentAdmin;
+  return <AuthContext.Provider value={{user,profile,loading,teams,schools,blacklisted,isSuperAdmin,isTeamAdmin,isSchoolAdmin,isExcuseAdmin,isAnyAdmin,adminTeamIds,adminSchoolIds,adminTeamId:adminTeamIds[0]||null,excuseAdminIds,excuseAdminTeamIds,paymentAdminTeamIds,isPaymentAdmin,signInWithGoogle,signOut,completeRegistration,refreshProfile}}>{children}</AuthContext.Provider>;
 }
 export const useAuth=()=>useContext(AuthContext);

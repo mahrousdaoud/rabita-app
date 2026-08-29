@@ -6,13 +6,18 @@ service cloud.firestore {
     function myProfile(){ return get(/databases/$(database)/documents/students/$(request.auth.uid)).data; }
     function isSuperAdmin(){ return signedIn() && (request.auth.token.email == 'shadydawoud577@gmail.com' || (profileExists() && myProfile().isAdmin == true)); }
     function isExcuseAdmin(){ return signedIn() && (isSuperAdmin() || (exists(/databases/$(database)/documents/appSettings/general) && request.auth.uid in get(/databases/$(database)/documents/appSettings/general).data.excuseAdminIds)); }
+    function isPaymentAdminOf(teamId){ return signedIn() && teamId != null && exists(/databases/$(database)/documents/teams/$(teamId)) && get(/databases/$(database)/documents/teams/$(teamId)).data.paymentAdminIds != null && request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.paymentAdminIds; }
     function isTeamAdminOf(teamId){ return signedIn() && teamId != null && exists(/databases/$(database)/documents/teams/$(teamId)) && ((get(/databases/$(database)/documents/teams/$(teamId)).data.adminIds != null && request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.adminIds) || (profileExists() && myProfile().adminTeamIds != null && request.auth.uid in myProfile().adminTeamIds) || (profileExists() && myProfile().adminTeamId != null && myProfile().adminTeamId == teamId)); }
+    function isExcuseAdminOf(teamId){ return signedIn() && teamId != null && exists(/databases/$(database)/documents/teams/$(teamId)) && get(/databases/$(database)/documents/teams/$(teamId)).data.excuseAdminIds != null && request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.excuseAdminIds; }
     function isSchoolAdminOf(schoolId){ return signedIn() && schoolId != null && exists(/databases/$(database)/documents/schools/$(schoolId)) && ((get(/databases/$(database)/documents/schools/$(schoolId)).data.adminIds != null && request.auth.uid in get(/databases/$(database)/documents/schools/$(schoolId)).data.adminIds) || (profileExists() && myProfile().adminSchoolIds != null && request.auth.uid in myProfile().adminSchoolIds)); }
 
     match /students/{studentId} {
-      allow read: if signedIn() && (request.auth.uid == studentId || isSuperAdmin() || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId));
+      allow read: if signedIn() && (request.auth.uid == studentId || isSuperAdmin() || isTeamAdminOf(resource.data.teamId) || isPaymentAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId));
       allow create: if signedIn() && request.auth.uid == studentId;
-      allow update: if isSuperAdmin() || (signedIn() && request.auth.uid == studentId && request.resource.data.email == resource.data.email && request.resource.data.isAdmin == resource.data.isAdmin);
+      allow update: if isSuperAdmin()
+      || (signedIn() && request.auth.uid == studentId && request.resource.data.email == resource.data.email && request.resource.data.isAdmin == resource.data.isAdmin)
+      || ((isTeamAdminOf(resource.data.teamId) || isPaymentAdminOf(resource.data.teamId)) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paidMonths']))
+      || (isSchoolAdminOf(resource.data.schoolId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paidMonths']));
       allow delete: if isSuperAdmin() || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId);
     }
 
@@ -52,10 +57,20 @@ service cloud.firestore {
     match /teamPostComments/{commentId} { allow read: if signedIn(); allow create: if signedIn() && request.resource.data.authorId == request.auth.uid; allow update,delete: if signedIn() && (request.auth.uid == resource.data.authorId || isSuperAdmin()); }
 
     match /excuses/{excuseId} {
-      allow read: if signedIn() && (isExcuseAdmin() || request.auth.uid == resource.data.studentId || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId));
+      allow read: if signedIn() && (isExcuseAdmin() || isExcuseAdminOf(resource.data.teamId) || request.auth.uid == resource.data.studentId || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId));
       allow create: if signedIn() && request.resource.data.studentId == request.auth.uid && profileExists();
-      allow update: if isExcuseAdmin() || (signedIn() && request.auth.uid == resource.data.studentId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reason','updatedAt'])) || ((isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId)) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','adminReply','rejectedByName','rejectedByPhone','updatedAt']));
-      allow delete: if isSuperAdmin() || isExcuseAdmin() || (signedIn() && resource.data.studentId == request.auth.uid) || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId);
+      allow update: if isExcuseAdmin() || (signedIn() && request.auth.uid == resource.data.studentId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reason','updatedAt'])) || ((isTeamAdminOf(resource.data.teamId) || isExcuseAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId)) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','adminReply','rejectedByName','rejectedByPhone','updatedAt']));
+      allow delete: if isSuperAdmin() || isExcuseAdmin() || isExcuseAdminOf(resource.data.teamId) || (signedIn() && resource.data.studentId == request.auth.uid) || isTeamAdminOf(resource.data.teamId) || isSchoolAdminOf(resource.data.schoolId);
+    }
+
+    match /leaders/{leaderId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /notificationTokens/{tokenId} {
+      allow create, update: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow read, delete: if isSuperAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
     }
   }
 }

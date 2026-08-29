@@ -19,12 +19,12 @@ export default function Welcome() {
   return (
     <div className="min-h-screen bg-sand-50 py-8 px-4">
       <div className="max-w-4xl mx-auto space-y-5 relative"><div className="absolute top-0 right-0 z-10"><LanguageToggle/></div>
-        <section className="bg-teal-950 text-sand-50 rounded-xl2 p-6 md:p-9 text-center">
-          <img src="/logo.png" className="w-28 h-28 mx-auto mb-4" alt="شعار EGYPT SPORTS COALITION" />
+        <section className="bg-white text-teal-950 rounded-xl2 p-6 md:p-9 text-center border border-teal-900/10 shadow-sm">
+          <img src="/logo.png" className="w-28 h-28 mx-auto mb-4 bg-sand-50 rounded-2xl p-2 border border-teal-900/10" alt="شعار EGYPT SPORTS COALITION" />
           <p className="font-display text-gold-400 font-bold mb-2">{lang === "ar" ? "اذهبوا – تلمذوا – علموا" : "Go – Make Disciples – Teach"}</p>
-          <p className="font-body text-xs md:text-sm text-teal-100/80 leading-7">اذهبوا وتلمذوا جميع الأمم، وعمدوهم باسم الآب والابن والروح القدس، وعلموهم أن يحفظوا جميع ما أوصيتكم به. وها أنا معكم كل الأيام إلى انقضاء الدهر. آمين. متى 19:28 - 20</p>
+          <p className="font-body text-xs md:text-sm text-teal-900/70 leading-7">اذهبوا وتلمذوا جميع الأمم، وعمدوهم باسم الآب والابن والروح القدس، وعلموهم أن يحفظوا جميع ما أوصيتكم به. وها أنا معكم كل الأيام إلى انقضاء الدهر. آمين. متى 19:28 - 20</p>
           <h1 className="font-display font-extrabold text-2xl md:text-4xl">{lang === "ar" ? "EGYPT SPORTS COALITION" : "EGYPT SPORTS COALITION"}</h1>
-          <p className="font-body mt-4 leading-8 text-teal-100/85">
+          <p className="font-body mt-4 leading-8 text-teal-900/75">
             {lang === "ar" ? "جيل من الشباب يعرف الرب وتلاميذ وخدام المسيح من خلال الرياضة" : "A generation of young people who know the Lord and become disciples and servants of Christ through sports"}
           </p>
         </section>

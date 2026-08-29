@@ -1,77 +1,25 @@
 rules_version = '2';
-
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // =====================================================
-    // SIGNED IN
-    // =====================================================
-
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    // =====================================================
-    // TEAM POSTS / صور الجروب
-    // =====================================================
-
+    function signedIn() { return request.auth != null; }\n    function superAdmin() { return signedIn() && request.auth.token.email == "shadydawoud577@gmail.com"; }
     match /teamPosts/{groupId}/{userId}/{fileName} {
-
-      // كل الأعضاء المسجلين يشوفوا الصور
       allow read: if signedIn();
-
-      // المستخدم يرفع باسمه فقط
-      allow create: if
-        signedIn() &&
-        request.auth.uid == userId;
-
-      // صاحب الملف يستطيع تحديثه
-      allow update: if
-        signedIn() &&
-        request.auth.uid == userId;
-
-      // صاحب الملف يستطيع حذفه
-      allow delete: if
-        signedIn() &&
-        request.auth.uid == userId;
+      allow write: if signedIn() && request.auth.uid == userId;
     }
-
-    // =====================================================
-    // CUSTOM EVENTS / أحداثنا
-    // =====================================================
-
     match /customEvents/{fileName} {
-
       allow read: if signedIn();
-
-      allow create: if signedIn();
-
-      allow update: if signedIn();
-
+      allow write: if signedIn();
       allow delete: if signedIn();
     }
-
-    // =====================================================
-    // MEETING / EVENT ATTACHMENTS
-    // =====================================================
-
+    match /leaders/{teamId}/{fileName} {
+      allow read: if signedIn();
+      allow write, delete: if superAdmin();
+    }
     match /meetingAttachments/{type}/{fileName} {
-
       allow read: if signedIn();
-
-      allow create: if signedIn();
-
-      allow update: if signedIn();
-
+      allow write: if signedIn();
       allow delete: if signedIn();
-    }
-
-    // =====================================================
-    // DEFAULT DENY
-    // =====================================================
-
-    match /{allPaths=**} {
-      allow read, write: if false;
     }
   }
 }
+

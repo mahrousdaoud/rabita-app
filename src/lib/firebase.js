@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getMessaging, isSupported } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAwCWdn3CheiEhMxxfuxiJTTZfvJsIZWqE",
@@ -13,12 +14,13 @@ const firebaseConfig = {
 };
 
 export const ADMIN_EMAILS = ["shadydawoud577@gmail.com"];
+export const FIREBASE_VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || "";
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const messagingPromise = isSupported().then(ok => ok ? getMessaging(app) : null).catch(() => null);
 
-export const isAdminEmail = (email) =>
-  ADMIN_EMAILS.includes((email || "").toLowerCase());
+export const isAdminEmail = (email) => ADMIN_EMAILS.includes((email || "").toLowerCase());
