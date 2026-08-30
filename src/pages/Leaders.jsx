@@ -1,12 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc, Timestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../lib/firebase";
+import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import TopBar from "../components/TopBar";
 
 const empty={name:"",role:"",bio:"",birthDate:"",joinedAt:"",maritalStatus:"",region:"",phone:"",photoURL:""};
 function ageFrom(date){if(!date)return "";const d=new Date(date),now=new Date();let a=now.getFullYear()-d.getFullYear();if(now.getMonth()<d.getMonth()||(now.getMonth()===d.getMonth()&&now.getDate()<d.getDate()))a--;return Math.max(a,0)}
+// Firebase Storage requires the paid Blaze plan, فبنعمل بديل مجاني: نضغط الصورة في المتصفح ونحفظها base64 جوه Firestore نفسها.
+function compressImageToBase64(file,maxDim=480,quality=0.72){
+ return new Promise((resolve,reject)=>{
+  if(!file.type.startsWith("image/")){reject(new Error("الملف المختار مش صورة"));return}
+  const reader=new FileReader();
+  reader.onerror=()=>reject(new Error("تعذرت قراءة الصورة"));
+  reader.onload=e=>{
+   const img=new Image();
+   img.onerror=()=>reject(new Error("تعذر تحميل الصورة"));
+   img.onload=()=>{
+    let {width,height}=img;
+    if(width>height){if(width>maxDim){height=Math.round(height*maxDim/width);width=maxDim}}
+    else{if(height>maxDim){width=Math.round(width*maxDim/height);height=maxDim}}
+    const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;
+    const ctx=canvas.getContext("2d");ctx.drawImage(img,0,0,width,height);
+    resolve(canvas.toDataURL("image/jpeg",quality));
+   };
+   img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+ });
+}
 
 export default function Leaders(){
  const {isSuperAdmin,teams}=useAuth(); const [leaders,setLeaders]=useState([]),[open,setOpen]=useState(false),[editing,setEditing]=useState(null),[teamId,setTeamId]=useState(""),[form,setForm]=useState(empty),[file,setFile]=useState(null),[saving,setSaving]=useState(false);
@@ -15,7 +36,7 @@ export default function Leaders(){
  const start=(t,l=null)=>{setTeamId(t.id);setEditing(l);setForm(l?{...empty,...l}:{...empty});setFile(null);setOpen(true)};
  const save=async e=>{e.preventDefault();if(!form.name.trim()||!teamId)return;setSaving(true);try{
    let photoURL=form.photoURL||"";
-   if(file){const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");const r=ref(storage,`leaders/${teamId}/${Date.now()}_${safe}`);await uploadBytes(r,file);photoURL=await getDownloadURL(r);}
+   if(file)photoURL=await compressImageToBase64(file);
    const team=teams.find(t=>t.id===teamId);const data={...form,name:form.name.trim(),teamId,teamName:team?.name||"",photoURL,age:ageFrom(form.birthDate),updatedAt:Timestamp.now()};
    if(editing) await updateDoc(doc(db,"leaders",editing.id),data); else await addDoc(collection(db,"leaders"),{...data,createdAt:Timestamp.now()});
    setOpen(false);
